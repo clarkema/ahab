@@ -1,0 +1,38 @@
+#! /usr/bin/env perl6
+
+use WWW;
+
+my $api-base = "https://registry.hub.docker.com";
+
+sub tags-url($repo) {
+    "$api-base/v2/repositories/library/$repo/tags?page_size=100"
+}
+
+sub MAIN($repository) {
+    my @tags;
+    my $next = tags-url($repository);
+
+    while $next ~~ Str {
+        my %root = jget($next);
+
+        CATCH {
+            default {
+                if .payload ~~ /^Error\s+404/ {
+                    note "Tag information for `$repository' was not found.";
+                }
+                else {
+                    note "Error fetching information from docker.com: "
+                        ~ .message;
+                }
+                exit 1;
+            }
+        }
+        $next = %root{"next"};
+
+        for @(%root{"results"}) -> %image {
+            @tags.push(%image{"name"})
+        }
+    }
+
+    say @tags.sort.join("\n");
+}
