@@ -5,12 +5,15 @@ use WWW;
 my $api-base = "https://registry.hub.docker.com";
 
 sub tags-url($repo) {
-    "$api-base/v2/repositories/library/$repo/tags?page_size=100"
+    "$api-base/v2/repositories/$repo/tags?page_size=100"
 }
 
 sub MAIN($repository) {
+    my $repo = $repository;
+    $repo = "library/$repo" unless $repo ~~ m/\//;
+
     my @tags;
-    my $next = tags-url($repository);
+    my $next = tags-url($repo);
 
     while $next ~~ Str {
         my %root = jget($next);
